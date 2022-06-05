@@ -1,7 +1,4 @@
-all: callcare call
-
-callcare: callcare.c
-	gcc callcare.c call.c -lpthread -o callcare call -l wiringPi -l linphone
+all: call
 
 call: call.c
-	gcc call.c -o call -lwiringPi -llinphone -lpthread
+	gcc call.c configCallcare.c -o call -lwiringPi -llinphone -lpthread

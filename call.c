@@ -22,38 +22,38 @@ static bool_t running=TRUE;
 static void stop(int signum){
         running=FALSE;
 }
-static int buttonPin = 27;
-static int ledPinGreenCall = 9;
-static int ledPinRedError = 21;
-static int buttonState = 0;
-static int isRinging = 0;
-static int inCall = 0;
-static int endCall = 0;
-static int isError = 0;
+
 const char *dest = "mathieu_maes@sip.linphone.org";
+
 pthread_t *ledControllerThread, *callControllerThread;
 
 static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState cstate, const char *msg){
         switch(cstate){
                 case LinphoneCallOutgoingRinging:
-                        printf("It is now ringing remotely !\n");
+                        printf("Le soignant reçoit l'appel !\n");
                         isRinging = 1;
+                        inCall = 0;
+                        endCall = 0;
+                        isError = 0;
                 break;
                 case LinphoneCallOutgoingEarlyMedia:
-                        printf("Receiving some early media\n");
+                        printf("Réception de média en avance\n");
                 break;
                 case LinphoneCallConnected:
-                        printf("We are connected !\n");
+                        printf("Connecté !\n");
                         isRinging = 0;
                         inCall = 1;
+                        endCall = 0;
+                        isError = 0;
                 case LinphoneCallStreamsRunning:
-                        printf("Media streams established !\n");
+                        printf("Mise en place des flux de médias !\n");
                 break;
                 case LinphoneCallEnd:
-                        printf("Call is terminated.\n");
+                        printf("Appel terminé.\n");
                         inCall = 0;
                         inCall = 0;
                         endCall = 1;
+                        isError = 0;
                         linphone_core_terminate_call(lc,call);
                         /*at this stage we don't need the call object */
                         linphone_call_unref(call);
@@ -61,7 +61,7 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
                         buttonPressing();
                 break;
                 case LinphoneCallError:
-                        printf("Call failure !");
+                        printf("Problème lors de l'appel !");
                         isRinging = 0;
                         inCall = 0;
                         endCall = 0;
@@ -71,7 +71,7 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
                         buttonPressing();
                 break;
                 default:
-                        printf("Unhandled notification %i\n",cstate);
+                        printf("Notification non traitée %i\n",cstate);
         }
 }
 
@@ -102,37 +102,22 @@ int *call() {
         LinphoneCore *lc;
         LinphoneCall *call=NULL;
         /* 
-         Fill the LinphoneCoreVTable with application callbacks.
-         All are optional. Here we only use the call_state_changed callbacks
-         in order to get notifications about the progress of the call.
+         La table est remplie avec les rappels
+         Permet d'appeller les cas dans call_state_changed
+         Permet d'ajouter de la logique pour les états de l'appel
          */
         vtable.call_state_changed=call_state_changed;
         /*
-         Instanciate a LinphoneCore object given the LinphoneCoreVTable
+         On instancie le noyau Linphone
         */
-        lc=linphone_core_new(&vtable,NULL,NULL,NULL);
+        lc=linphone_core_new(NULL,NULL,NULL,NULL);
+        
         linphone_core_enable_self_view(lc, TRUE);
         linphone_core_enable_video(lc, TRUE, TRUE);
         
-        //linphone_core_set_default_sound_devices(lc);
-        //linphone_core_reload_sound_devices(lc);
-        /*
-        char** soundDevices = linphone_core_get_sound_devices(lc);
-        int i;
-        size_t n = sizeof(soundDevices);
-        for(i=0; i<n; i++){
-                //printf("\nGet capture device : %s\n", linphone_core_get_sound_device(lc));
-                if(strstr(soundDevices[i], "UACDemo")){
-                        printf("USB Sound devices :%s\n", soundDevices[i]);
-                        //linphone_core_set_capture_device(lc, soundDevices[i]);
-                        //printf("\nGet capture device : %s\n", linphone_core_get_capture_device(lc));
-                }
-        }
-        
-        */
         if (dest){
                 /*
-                 Place an outgoing call
+                 Passe l'appel vers le destinataire dest
                 */
                 call=linphone_core_invite(lc,dest);
                 if (call==NULL){
@@ -144,7 +129,7 @@ int *call() {
                 isRinging = 0;
         }
         
-        /* main loop for receiving notifications and doing background linphonecore work: */
+        /* bouble pour recevoir les états de call_state_changed en fond*/
         while(running){
                 linphone_core_iterate(lc);
                 
@@ -164,7 +149,7 @@ int buttonPressing(){
                         // Thread appel
                         pthread_create(&callControllerThread, NULL, call, NULL);
                         pthread_create(&ledControllerThread, NULL, ledControl, NULL);
-                        // Thread led
+                        // Thread gestion des led
                         pthread_join(ledControllerThread, NULL);
                         pthread_join(callControllerThread, NULL);
 		}
@@ -172,12 +157,17 @@ int buttonPressing(){
 }
 
 int main(int argc, char **argv){
-        wiringPiSetup();
         
+        configPin(); //Configuration des pin GPIO
+        wiringPiSetup();
+        /* Configuration des entrées sorties */
 	pinMode(buttonPin, INPUT);
+        
+	pinMode(ledPinGreenState, OUTPUT);
 	pinMode(ledPinGreenCall, OUTPUT);
         pinMode(ledPinRedError, OUTPUT);
-        
+        /* État de base des leds */
+        digitalWrite(ledPinGreenState, HIGH);
         digitalWrite(ledPinGreenCall, LOW);
         digitalWrite(ledPinRedError, LOW);
         
