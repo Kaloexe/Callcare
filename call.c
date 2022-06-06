@@ -153,6 +153,10 @@ int *call() {
 }
 
 int buttonPressing(){
+        inCall = 0;
+        inCall = 0;
+        endCall = 0;
+        isError = 0;
         buttonState = digitalRead(buttonPin);
         while(1){
 		buttonState = digitalRead(buttonPin);
