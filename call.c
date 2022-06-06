@@ -23,6 +23,11 @@ static void stop(int signum){
         running=FALSE;
 }
 
+const int buttonPin = 27;
+const int ledPinGreenState = 8;
+const int ledPinGreenCall = 9;
+const int ledPinRedError = 21;
+
 const char *dest = "mathieu_maes@sip.linphone.org";
 
 pthread_t *ledControllerThread, *callControllerThread;
@@ -158,7 +163,7 @@ int buttonPressing(){
 
 int main(int argc, char **argv){
         
-        configPin(); //Configuration des pin GPIO
+        //configPin(); //Configuration des pin GPIO
         wiringPiSetup();
         /* Configuration des entrées sorties */
 	pinMode(buttonPin, INPUT);
