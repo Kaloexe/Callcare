@@ -1,7 +1,7 @@
 all: call
 
 call: call.c
-	gcc call.c configCallcare.c -o call -lwiringPi -llinphone -lpthread
+	gcc call.c -o call -lwiringPi -llinphone -lpthread
 
 clean:
 	rm -rf call

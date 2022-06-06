@@ -1,6 +1,7 @@
+/* Configuration ports GPIO via console
+
 #include "call.h"
 
-/* Configuration ports GPIO via console
 void configPin()
 {
         printf("Pin bouton (27) : ");

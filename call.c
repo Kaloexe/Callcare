@@ -23,12 +23,18 @@ static void stop(int signum){
         running=FALSE;
 }
 
-const int buttonPin = 27;
-const int ledPinGreenState = 8;
-const int ledPinGreenCall = 9;
-const int ledPinRedError = 21;
+static int buttonPin = 27;
+static int ledPinGreenState = 8;
+static int ledPinGreenCall = 9;
+static int ledPinRedError = 21;
 
 const char *dest = "mathieu_maes@sip.linphone.org";
+
+static int buttonState = 0;
+static int isRinging = 0;
+static int inCall = 0;
+static int endCall = 0;
+static int isError = 0;
 
 pthread_t *ledControllerThread, *callControllerThread;
 
@@ -60,7 +66,7 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
                         endCall = 1;
                         isError = 0;
                         linphone_core_terminate_call(lc,call);
-                        /*at this stage we don't need the call object */
+                        /* Fin de l'appel */
                         linphone_call_unref(call);
                         linphone_core_destroy(lc);
                         buttonPressing();
@@ -76,7 +82,7 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
                         buttonPressing();
                 break;
                 default:
-                        printf("Notification non traitée %i\n",cstate);
+                        printf("Notification non traitees %i\n",cstate);
         }
 }
 
@@ -115,7 +121,7 @@ int *call() {
         /*
          On instancie le noyau Linphone
         */
-        lc=linphone_core_new(NULL,NULL,NULL,NULL);
+        lc=linphone_core_new(&vtable,NULL,NULL,NULL);
         
         linphone_core_enable_self_view(lc, TRUE);
         linphone_core_enable_video(lc, TRUE, TRUE);
@@ -176,5 +182,6 @@ int main(int argc, char **argv){
         digitalWrite(ledPinGreenCall, LOW);
         digitalWrite(ledPinRedError, LOW);
         
-        buttonPressing(); 0;
+        buttonPressing(); 
+        return 0;
 }
